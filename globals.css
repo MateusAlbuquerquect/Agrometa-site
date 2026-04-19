@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --agro-green: #22c55e;
+  --agro-dark: #0a0f0d;
+}
+
+body {
+  background-color: var(--agro-dark);
+  color: white;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

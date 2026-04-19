@@ -3,30 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --agro-green:        #65a30d; /* lime-600 — vibrante, legível no branco */
-  --agro-green-light:  #ecfccb; /* lime-100 — fundo de aba ativa */
-  --agro-green-hover:  #84cc16; /* lime-500 — hover */
-  --agro-border:       #e5e7eb; /* gray-200 */
-  --agro-text:         #111827; /* gray-900 */
-  --agro-muted:        #6b7280; /* gray-500 */
-  --agro-bg:           #ffffff;
-  --agro-surface:      #f9fafb; /* gray-50 */
+  --lime:        #65a30d;
+  --lime-light:  #ecfccb;
+  --lime-hover:  #84cc16;
+  --border:      #e5e7eb;
+  --text:        #111827;
+  --muted:       #6b7280;
+  --surface:     #f9fafb;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background-color: var(--agro-bg);
-  color: var(--agro-text);
+  background: #fff;
+  color: var(--text);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Scrollbar discreta */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+/* Transition global para hover */
+button, a { transition: all 0.15s ease; }

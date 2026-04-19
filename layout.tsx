@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'AgroMeta',
-  description: 'ERP Agrícola — Gestão de Inventário e Operações de Campo',
+  title: 'AgroMeta — ERP Agrícola',
+  description: 'Sistema de gestão agrícola: inventário, maquinário e operações de campo.',
 }
 
 export default function RootLayout({
@@ -13,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body className="min-h-screen bg-agro-dark text-white antialiased">
+        {children}
+      </body>
     </html>
   )
 }

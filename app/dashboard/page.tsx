@@ -1137,15 +1137,39 @@ export default function DashboardPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.replace('/login'); return }
 
-      const [{ data: prof }, { data: tm }, { data: al }] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', session.user.id).single(),
+      // Busca perfil — se tabela não existir ainda, usa fallback do auth
+      const { data: prof, error: profErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+
+      if (prof) {
+        setProfile(prof as Profile)
+      } else {
+        // Fallback: monta perfil básico com dados do Auth enquanto o schema não está rodado
+        setProfile({
+          id:         session.user.id,
+          full_name:  session.user.user_metadata?.full_name
+                      ?? session.user.email?.split('@')[0]
+                      ?? 'Usuário',
+          role:       'admin',
+          avatar_url: null,
+          created_at: session.user.created_at,
+        })
+        if (profErr) {
+          console.warn('Tabela profiles não encontrada. Rode o supabase-schema.sql no Supabase.')
+        }
+      }
+
+      // Busca equipe e alertas — ignora erros silenciosamente se tabelas não existem
+      const [{ data: tm }, { data: al }] = await Promise.all([
         supabase.from('profiles').select('*').order('full_name'),
         supabase.from('inventory_alerts').select('*'),
       ])
 
-      if (prof) setProfile(prof as Profile)
-      if (tm)   setTeam(tm as Profile[])
-      if (al)   setAlerts(al as InventoryAlert[])
+      if (tm)  setTeam(tm as Profile[])
+      if (al)  setAlerts(al as InventoryAlert[])
       setCheckingAuth(false)
     }
     init()

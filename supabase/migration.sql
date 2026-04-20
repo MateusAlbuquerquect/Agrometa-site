@@ -67,7 +67,11 @@ create table if not exists public.operation_inputs (
 -- 4. VIEW: inventory_alerts
 -- ---------------------------------------------------------------------------
 
-create or replace view public.inventory_alerts as
+-- Garante que inventory_alerts seja uma VIEW (remove tabela se existir)
+drop table if exists public.inventory_alerts cascade;
+drop view  if exists public.inventory_alerts cascade;
+
+create view public.inventory_alerts as
 select
   id,
   farm_id,

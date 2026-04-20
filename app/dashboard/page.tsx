@@ -577,7 +577,7 @@ function PlotsTab() {
     })
     setSaving(false)
     setModalOpen(false)
-    setForm({ name:'', variety:'', plant_age_months:'', cut_cycle:'1', area_ha:'', notes:'' })
+    setForm({ name:'', variety:'', cut_cycle:'1', area_ha:'', notes:'' })
     loadPlots()
   }
 
@@ -635,7 +635,7 @@ function PlotsTab() {
                 <div className="flex gap-3 mt-3">
                   {[
                     { label: 'Ciclo', value: `${plot.cut_cycle}° corte` },
-                    { label: 'Idade', value: `${plot.plant_age_months} meses` },
+                    { label: 'Ciclo', value: `${plot.cut_cycle}° corte` },
                     { label: 'Área', value: plot.area_ha ? `${plot.area_ha} ha` : '—' },
                   ].map(stat => (
                     <div key={stat.label} className="bg-gray-50 rounded-lg px-2.5 py-1.5">

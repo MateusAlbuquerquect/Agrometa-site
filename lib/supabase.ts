@@ -5,8 +5,6 @@ const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnon)
 
-// ─── Tipos sincronizados com o schema ────────────────────────────────────────
-
 export type Profile = {
   id: string
   full_name: string
@@ -15,12 +13,19 @@ export type Profile = {
   created_at: string
 }
 
+export type Farm = {
+  id: string
+  name: string
+  owner_id: string | null
+}
+
 export type InventoryCategory =
   | 'Adubo' | 'Calcário' | 'Herbicida'
   | 'Inseticida' | 'Nutricional' | 'Diesel' | 'Gasolina' | 'Outro'
 
 export type InventoryItem = {
   id: string
+  farm_id: string
   name: string
   category: InventoryCategory
   sub_type: string | null
@@ -35,13 +40,28 @@ export type InventoryItem = {
 
 export type Plot = {
   id: string
+  farm_id: string
   name: string
   variety: string
-  plant_age_months: number
   cut_cycle: number
-  area_ha: number | null
+  area_ha: number
   notes: string | null
   active: boolean
+  created_at: string
+}
+
+export type MachineType = 'trator' | 'colheitadeira' | 'moto' | 'caminhao' | 'pulverizador' | 'grade' | 'outro'
+export type FuelType    = 'diesel' | 'gasolina' | 'flex' | 'eletrico'
+
+export type Machine = {
+  id: string
+  farm_id: string
+  name: string
+  type: MachineType
+  fuel_type: FuelType
+  horimetro_atual: number
+  horimetro_proxima_manutencao: number | null
+  placa: string | null
   created_at: string
 }
 
@@ -51,29 +71,32 @@ export type ActivityType =
 
 export type Operation = {
   id: string
+  farm_id: string
   plot_id: string
-  inventory_id: string
+  machine_id: string | null
+  inventory_id: string | null
   operator_id: string | null
   operation_date: string
-  quantity_used: number
-  unit: string
+  quantity_used: number | null
+  unit: string | null
   activity_type: ActivityType
+  horimetro_inicio: number | null
+  horimetro_fim: number | null
   notes: string | null
   created_at: string
-  // joins
   plots?: { name: string }
   inventory?: { name: string; category: string }
+  machines?: { name: string }
   profiles?: { full_name: string }
 }
 
-export type AlertLevel = 'empty' | 'critical' | 'low'
-
 export type InventoryAlert = {
   id: string
+  farm_id: string
   name: string
   category: string
   quantity: number
   min_quantity: number
   unit: string
-  alert_level: AlertLevel
+  alert_level: 'empty' | 'critical' | 'low'
 }

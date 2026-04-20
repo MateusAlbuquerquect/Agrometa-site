@@ -32,10 +32,9 @@ export function AppHeader() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
 
-      const [{ data: prof }, { data: member }, { data: alerts }] = await Promise.all([
+      const [{ data: prof }, { data: member }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', session.user.id).single(),
         supabase.from('farm_members').select('farm_id, farms(id,name)').eq('user_id', session.user.id).limit(1).single(),
-        supabase.from('inventory_alerts').select('id'),
       ])
 
       if (prof) setProfile(prof as Profile)
@@ -44,14 +43,13 @@ export function AppHeader() {
         const f = member.farms as unknown as { id: string; name: string }
         setFarmId(f.id); setFarmName(f.name); setNewName(f.name)
 
-        const { data: tm } = await supabase
-          .from('farm_members')
-          .select('profiles(id,full_name,role)')
-          .eq('farm_id', f.id)
+        const [{ data: tm }, { data: alerts }] = await Promise.all([
+          supabase.from('farm_members').select('profiles(id,full_name,role)').eq('farm_id', f.id),
+          supabase.from('inventory_alerts').select('id').eq('farm_id', f.id),
+        ])
         if (tm) setTeam(tm.map((m: any) => m.profiles).filter(Boolean) as Profile[])
+        if (alerts) setAlertCount(alerts.length)
       }
-
-      if (alerts) setAlertCount(alerts.length)
     }
     load()
   }, [supabase])

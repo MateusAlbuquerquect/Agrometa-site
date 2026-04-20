@@ -295,7 +295,7 @@ export function InventoryModule() {
   useEffect(() => {
     async function loadFarm() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
       const { data } = await supabase
         .from("farm_members")
         .select("farm_id")
@@ -303,12 +303,13 @@ export function InventoryModule() {
         .limit(1)
         .single();
       if (data) setFarmId(data.farm_id);
+      else setLoading(false);
     }
     loadFarm();
   }, [supabase]);
 
   const fetchItems = useCallback(async () => {
-    if (!farmId) return;
+    if (!farmId) { setLoading(false); return; }
     setLoading(true);
     const { data } = await supabase
       .from("inventory_items")

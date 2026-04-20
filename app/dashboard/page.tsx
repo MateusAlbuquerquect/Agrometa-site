@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Package, Leaf, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Package, Leaf, ClipboardList, Tractor } from "lucide-react";
 import { AppHeader } from "@/app/components/AppHeader";
 import { DashboardModule } from "@/app/components/module_dashboard/DashboardModule";
 import { InventoryModule } from "@/app/components/module_inventory/InventoryModule";
 import { PlotsModule } from "@/app/components/module_plots/PlotsModule";
+import { MachinesModule } from "@/app/components/module_machinery/MachinesModule";
 import { BoletimModule } from "@/app/components/module_boletim/BoletimModule";
 
-type Tab = "dashboard" | "inventario" | "lotes" | "boletim";
+type Tab = "dashboard" | "inventario" | "lotes" | "maquinas" | "boletim";
 
 const TABS: { id: Tab; label: string; Icon: React.ElementType; dot?: boolean }[] = [
   { id: "dashboard",  label: "Dashboard",  Icon: LayoutDashboard },
   { id: "inventario", label: "Inventário", Icon: Package },
   { id: "lotes",      label: "Lotes",      Icon: Leaf },
+  { id: "maquinas",   label: "Máquinas",   Icon: Tractor },
   { id: "boletim",    label: "Boletim",    Icon: ClipboardList, dot: true },
 ];
 
@@ -46,6 +48,9 @@ export default function DashboardPage() {
         </div>
         <div className={activeTab === "lotes"      ? "tab-panel" : "tab-panel tab-panel--hidden"}>
           <PlotsModule />
+        </div>
+        <div className={activeTab === "maquinas"   ? "tab-panel" : "tab-panel tab-panel--hidden"}>
+          <MachinesModule />
         </div>
         <div className={activeTab === "boletim"    ? "tab-panel" : "tab-panel tab-panel--hidden"}>
           <BoletimModule />

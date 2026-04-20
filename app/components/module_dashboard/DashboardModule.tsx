@@ -58,7 +58,7 @@ export function DashboardModule() {
 
       const since30d = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
-      const [{ data: alerts }, { data: ops }, { data: txs }, { data: latest }] =
+      const [{ data: alerts }, { count: opsCount }, { data: txs }, { data: latest }] =
         await Promise.all([
           supabase
             .from("inventory_alerts")
@@ -66,7 +66,7 @@ export function DashboardModule() {
             .eq("farm_id", fId),
           supabase
             .from("operations")
-            .select("id", { count: "exact", head: true })
+            .select("*", { count: "exact", head: true })
             .eq("farm_id", fId),
           supabase
             .from("inventory_transactions")
@@ -90,7 +90,7 @@ export function DashboardModule() {
             (a) => a.alert_level === "critical" || a.alert_level === "empty"
           ).length ?? 0,
         alertsItems: alerts?.length ?? 0,
-        opsRegistered: (ops as unknown as { length: number } | null)?.length ?? 0,
+        opsRegistered: opsCount ?? 0,
         recentConsumption:
           txs?.reduce((sum, t) => sum + Math.abs(t.quantity), 0) ?? 0,
       });

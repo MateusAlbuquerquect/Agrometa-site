@@ -9,6 +9,16 @@ import {
   TrendingUp, Users, ChevronRight, Edit2, CheckCircle,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+
+// ─── Conversão de unidades ────────────────────────────────────────────────────
+function toBaseUnit(value: number, displayUnit: string): number {
+  return displayUnit === 't' ? value * 1000 : value
+}
+function fromBaseUnit(value: number, unit: string): { display: number; label: string } {
+  if (unit === 'kg' && value >= 1000) return { display: +(value / 1000).toFixed(3), label: 't' }
+  return { display: value, label: unit }
+}
+
 import type {
   Profile, InventoryItem, InventoryCategory,
   Plot, Operation, ActivityType, InventoryAlert,
@@ -510,10 +520,23 @@ function PlotsTab() {
   const [history, setHistory]   = useState<Operation[]>([])
   const [loading, setLoading]   = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
-  const [saving, setSaving]     = useState(false)
+  const [editPlot, setEditPlot]   = useState<Plot | null>(null)
+  const [saving, setSaving]       = useState(false)
+
+  function openEdit(plot: Plot) {
+    setEditPlot(plot)
+    setForm({
+      name: plot.name,
+      variety: plot.variety,
+      cut_cycle: String(plot.cut_cycle),
+      area_ha: String(plot.area_ha ?? ''),
+      notes: plot.notes ?? '',
+    })
+    setModalOpen(true)
+  }
 
   const [form, setForm] = useState({
-    name: '', variety: '', plant_age_months: '',
+    name: '', variety: '', 
     cut_cycle: '1', area_ha: '', notes: '',
   })
 
@@ -547,7 +570,7 @@ function PlotsTab() {
     await supabase.from('plots').insert({
       name:              form.name,
       variety:           form.variety,
-      plant_age_months:  Number(form.plant_age_months) || 0,
+      
       cut_cycle:         Number(form.cut_cycle) || 1,
       area_ha:           form.area_ha ? Number(form.area_ha) : null,
       notes:             form.notes || null,
@@ -602,6 +625,11 @@ function PlotsTab() {
                     <p className="font-semibold text-gray-900 text-sm">{plot.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{plot.variety || 'Variedade não informada'}</p>
                   </div>
+                  <button type="button" onClick={e => { e.stopPropagation(); openEdit(plot) }}
+                    className="p-1.5 rounded hover:bg-lime-50 text-gray-400 hover:text-lime-600 transition-colors"
+                    title="Editar lote">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
                   <ChevronRight className={cn('w-4 h-4 mt-0.5', selected?.id === plot.id ? 'text-lime-500' : 'text-gray-300')} />
                 </div>
                 <div className="flex gap-3 mt-3">
@@ -673,16 +701,16 @@ function PlotsTab() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h3 className="text-base font-semibold text-gray-900">Cadastrar Lote</h3>
+              <h3 className="text-base font-semibold text-gray-900">{editPlot ? 'Editar Lote' : 'Cadastrar Lote'}</h3>
               <button type="button" onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-3">
               {[
-                { label: 'Nome do lote',     key: 'name',              type: 'text',   placeholder: 'Ex: Talhão 01' },
+                { label: 'Nome do lote',     key: 'name',              type: 'text',   placeholder: 'Ex: Lote 01' },
                 { label: 'Variedade da cana', key: 'variety',           type: 'text',   placeholder: 'Ex: RB92579' },
-                { label: 'Idade (meses)',     key: 'plant_age_months',  type: 'number', placeholder: '0' },
+                
                 { label: 'Área (ha)',         key: 'area_ha',           type: 'number', placeholder: '0.00' },
               ].map(f => (
                 <div key={f.key}>
@@ -743,7 +771,7 @@ function PlotsTab() {
                            text-sm font-medium text-white bg-lime-500 hover:bg-lime-600 rounded-lg disabled:opacity-60"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Cadastrar
+                {editPlot ? 'Salvar alterações' : 'Cadastrar'}
               </button>
             </div>
           </div>
@@ -880,7 +908,7 @@ function BoletimTab({ userId }: { userId: string }) {
 
           {/* Lote */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Lote / Talhão</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Lote / Lote</label>
             <select
               required
               value={form.plot_id}

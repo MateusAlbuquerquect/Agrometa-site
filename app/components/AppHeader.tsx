@@ -1,13 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Sprout, Bell, ChevronDown, Settings, LogOut, Users } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import { Sprout, Bell, Settings, ChevronDown, LogOut, Users } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { Profile } from '@/lib/supabase'
 
 export function AppHeader() {
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
+  )
+
   const router = useRouter()
   const [farmName, setFarmName]       = useState('Minha Fazenda')
   const [farmId, setFarmId]           = useState<string | null>(null)
@@ -30,18 +39,22 @@ export function AppHeader() {
       ])
 
       if (prof) setProfile(prof as Profile)
+
       if (member?.farms) {
         const f = member.farms as unknown as { id: string; name: string }
         setFarmId(f.id); setFarmName(f.name); setNewName(f.name)
-        const { data: tm } = await supabase.from('farm_members')
+
+        const { data: tm } = await supabase
+          .from('farm_members')
           .select('profiles(id,full_name,role)')
           .eq('farm_id', f.id)
         if (tm) setTeam(tm.map((m: any) => m.profiles).filter(Boolean) as Profile[])
       }
+
       if (alerts) setAlertCount(alerts.length)
     }
     load()
-  }, [])
+  }, [supabase])
 
   async function saveName() {
     if (!farmId || !newName.trim()) return
@@ -67,15 +80,25 @@ export function AppHeader() {
       <div className="flex-1 flex justify-center">
         {editingName ? (
           <div className="flex items-center gap-1">
-            <input autoFocus value={newName} onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false) }}
-              className="text-sm border border-lime-400 rounded-lg px-2 py-1 outline-none w-44 text-gray-800 bg-gray-50" maxLength={50} />
+            <input
+              autoFocus
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') saveName()
+                if (e.key === 'Escape') setEditingName(false)
+              }}
+              className="text-sm border border-lime-400 rounded-lg px-2 py-1 outline-none w-44 text-gray-800 bg-gray-50"
+              maxLength={50}
+            />
             <button onClick={saveName} className="text-lime-600 font-bold px-1.5">✓</button>
             <button onClick={() => setEditingName(false)} className="text-red-400 font-bold px-1">✕</button>
           </div>
         ) : (
-          <button onClick={() => setEditingName(true)}
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2 py-1 rounded-lg max-w-[180px] truncate">
+          <button
+            onClick={() => setEditingName(true)}
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 px-2 py-1 rounded-lg max-w-[180px] truncate"
+          >
             <span className="truncate">{farmName}</span>
             <ChevronDown className="w-3 h-3 shrink-0 opacity-50" />
           </button>
@@ -84,8 +107,11 @@ export function AppHeader() {
 
       {/* Ações */}
       <div className="flex items-center gap-1 shrink-0">
-        <button className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500"
-          title={alertCount > 0 ? `${alertCount} alertas` : 'Sem alertas'}>
+        {/* Sino de alertas */}
+        <button
+          className="relative p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+          title={alertCount > 0 ? `${alertCount} alertas` : 'Sem alertas'}
+        >
           <Bell className="w-4 h-4" />
           {alertCount > 0 && (
             <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center leading-none">
@@ -94,9 +120,20 @@ export function AppHeader() {
           )}
         </button>
 
+        {/* Configurações */}
+        <button
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+          title="Configurações"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+
+        {/* Avatar / Profile dropdown */}
         <div className="relative">
-          <button onClick={() => setProfileOpen(v => !v)}
-            className="w-8 h-8 rounded-full bg-lime-100 border border-lime-300 flex items-center justify-center hover:bg-lime-200 ml-1">
+          <button
+            onClick={() => setProfileOpen(v => !v)}
+            className="w-8 h-8 rounded-full bg-lime-100 border border-lime-300 flex items-center justify-center hover:bg-lime-200 ml-1"
+          >
             <span className="text-lime-700 text-xs font-bold">
               {profile?.full_name?.charAt(0).toUpperCase() ?? 'M'}
             </span>
@@ -106,6 +143,7 @@ export function AppHeader() {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
               <div className="absolute right-0 top-10 w-64 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
+                {/* User info */}
                 <div className="bg-lime-50 border-b border-lime-100 px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="w-9 h-9 rounded-full bg-lime-500 flex items-center justify-center text-white font-bold text-sm">
@@ -119,6 +157,8 @@ export function AppHeader() {
                     </div>
                   </div>
                 </div>
+
+                {/* Equipe */}
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Users className="w-3.5 h-3.5 text-gray-400" />
@@ -140,9 +180,13 @@ export function AppHeader() {
                       ))}
                   </div>
                 </div>
+
+                {/* Logout */}
                 <div className="border-t border-gray-100 px-4 py-2">
-                  <button onClick={logout}
-                    className="w-full flex items-center gap-2 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg">
+                  <button
+                    onClick={logout}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
+                  >
                     <LogOut className="w-4 h-4" /> Sair do sistema
                   </button>
                 </div>

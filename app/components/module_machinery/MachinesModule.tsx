@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { Plus, X, ChevronDown, Gauge, Fuel, Wrench } from "lucide-react";
+import { Plus, X, ChevronDown, Gauge, Fuel, Wrench, Pencil } from "lucide-react";
 
 // =============================================================================
 // Types
@@ -318,45 +318,56 @@ function OperationModal({
 }
 
 // =============================================================================
-// Modal: Nova Máquina
+// Modal: Nova / Editar Máquina (modo unificado)
 // =============================================================================
-function NewMachineModal({
+function MachineModal({
   farmId,
+  machine,
   onClose,
-  onCreated,
+  onSaved,
 }: {
   farmId: string;
+  machine?: Machine;
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
 }) {
   const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
-  const [name, setName] = useState("");
-  const [type, setType] = useState<MachineType>("trator");
-  const [fuelType, setFuelType] = useState<FuelType>("diesel");
-  const [horimetro, setHorimetro] = useState("0");
-  const [placa, setPlaca] = useState("");
+  const isEdit = !!machine;
+  const [name, setName] = useState(machine?.name ?? "");
+  const [type, setType] = useState<MachineType>(machine?.type ?? "trator");
+  const [fuelType, setFuelType] = useState<FuelType>(machine?.fuel_type ?? "diesel");
+  const [horimetro, setHorimetro] = useState(machine?.horimetro_atual.toString() ?? "0");
+  const [manutencao, setManutencao] = useState(machine?.horimetro_proxima_manutencao?.toString() ?? "");
+  const [placa, setPlaca] = useState(machine?.placa ?? "");
   const [loading, setLoading] = useState(false);
 
-  async function handleCreate() {
+  async function handleSave() {
     if (!name.trim()) return;
     setLoading(true);
-    const { error } = await supabase.from("machines").insert({
+
+    const payload = {
       farm_id: farmId,
       name: name.trim(),
       type,
       fuel_type: fuelType,
       horimetro_atual: parseFloat(horimetro) || 0,
+      horimetro_proxima_manutencao: manutencao ? parseFloat(manutencao) : null,
       placa: placa.trim() || null,
-    });
+    };
+
+    const { error } = isEdit
+      ? await supabase.from("machines").update(payload).eq("id", machine!.id)
+      : await supabase.from("machines").insert(payload);
+
     setLoading(false);
-    if (!error) { onCreated(); onClose(); }
+    if (!error) { onSaved(); onClose(); }
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="modal-title">Nova Máquina</h2>
+          <h2 className="modal-title">{isEdit ? "Editar Máquina" : "Nova Máquina"}</h2>
           <button onClick={onClose} className="modal-close"><X size={18} /></button>
         </div>
 
@@ -410,24 +421,36 @@ function NewMachineModal({
               />
             </div>
             <div className="field">
-              <label className="field-label">Placa (opcional)</label>
+              <label className="field-label">Próx. Manutenção (h)</label>
               <input
-                value={placa}
-                onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+                type="number"
+                value={manutencao}
+                onChange={(e) => setManutencao(e.target.value)}
                 className="field-input"
-                placeholder="ABC-1234"
-                maxLength={8}
+                placeholder="0.0"
+                step="50"
               />
             </div>
+          </div>
+
+          <div className="field">
+            <label className="field-label">Placa (opcional)</label>
+            <input
+              value={placa}
+              onChange={(e) => setPlaca(e.target.value.toUpperCase())}
+              className="field-input"
+              placeholder="ABC-1234"
+              maxLength={8}
+            />
           </div>
         </div>
 
         <button
-          onClick={handleCreate}
+          onClick={handleSave}
           disabled={loading || !name.trim()}
           className="modal-submit"
         >
-          {loading ? "Salvando..." : "Adicionar Máquina"}
+          {loading ? "Salvando..." : isEdit ? "Salvar Alterações" : "Adicionar Máquina"}
         </button>
       </div>
     </div>
@@ -442,7 +465,8 @@ export function MachinesModule() {
   const [farmId, setFarmId] = useState<string | null>(null);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
-  const [showNewMachine, setShowNewMachine] = useState(false);
+  const [editingMachine, setEditingMachine] = useState<Machine | undefined>(undefined);
+  const [showMachineModal, setShowMachineModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -475,12 +499,22 @@ export function MachinesModule() {
 
   useEffect(() => { fetchMachines(); }, [fetchMachines]);
 
+  function openNew() {
+    setEditingMachine(undefined);
+    setShowMachineModal(true);
+  }
+
+  function openEdit(m: Machine) {
+    setEditingMachine(m);
+    setShowMachineModal(true);
+  }
+
   return (
     <div className="mach-root">
       <div className="mach-header">
         <h1 className="mach-title">Máquinas</h1>
         <button
-          onClick={() => setShowNewMachine(true)}
+          onClick={openNew}
           className="btn-primary"
           disabled={!farmId}
         >
@@ -539,12 +573,21 @@ export function MachinesModule() {
                   </div>
                 </div>
 
-                <button
-                  className="btn-operation"
-                  onClick={() => setSelectedMachine(machine)}
-                >
-                  Registrar Operação
-                </button>
+                <div className="machine-card-actions">
+                  <button
+                    className="btn-edit-machine"
+                    onClick={() => openEdit(machine)}
+                    title="Editar máquina"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    className="btn-operation"
+                    onClick={() => setSelectedMachine(machine)}
+                  >
+                    Registrar Operação
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -560,11 +603,12 @@ export function MachinesModule() {
         />
       )}
 
-      {showNewMachine && farmId && (
-        <NewMachineModal
+      {showMachineModal && farmId && (
+        <MachineModal
           farmId={farmId}
-          onClose={() => setShowNewMachine(false)}
-          onCreated={fetchMachines}
+          machine={editingMachine}
+          onClose={() => setShowMachineModal(false)}
+          onSaved={fetchMachines}
         />
       )}
 
@@ -663,8 +707,28 @@ export function MachinesModule() {
           color: var(--color-text);
         }
 
+        .machine-card-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .btn-edit-machine {
+          background: none;
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius);
+          color: var(--color-text-muted);
+          padding: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+          transition: color 0.15s, border-color 0.15s;
+        }
+        .btn-edit-machine:hover { color: var(--color-accent-dim); border-color: var(--color-accent); }
+
         .btn-operation {
-          width: 100%;
+          flex: 1;
           background: none;
           border: 1px solid var(--mach-color);
           border-radius: var(--radius);

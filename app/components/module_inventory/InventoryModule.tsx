@@ -58,7 +58,6 @@ function TransactionModal({
   onClose: () => void;
   onSubmit: (payload: TransactionPayload) => Promise<void>;
 }) {
-  const isFuel = FUEL_CATEGORIES.includes(item.category);
   const [type, setType] = useState<"entrada" | "saida">("entrada");
   const [quantity, setQuantity] = useState("");
   const [valorTotal, setValorTotal] = useState("");
@@ -69,18 +68,19 @@ function TransactionModal({
   const valor = parseFloat(valorTotal) || 0;
   const custoPorUnidade = quantidade > 0 && valor > 0 ? valor / quantidade : null;
 
+  // Valor total obrigatório em TODAS as entradas (rastreabilidade financeira)
+  const entradaInvalida = type === "entrada" && valor <= 0;
+
   async function handleSubmit() {
-    if (quantidade <= 0) return;
-    if (isFuel && type === "entrada" && valor <= 0) return;
+    if (quantidade <= 0 || entradaInvalida) return;
 
     setLoading(true);
     try {
       await onSubmit({
         item_id: item.id,
         type,
-        // Saída = negativo no ledger
         quantity: type === "saida" ? -quantidade : quantidade,
-        valor_total_compra: isFuel && type === "entrada" ? valor : undefined,
+        valor_total_compra: type === "entrada" ? valor : undefined,
         notes: notes.trim() || undefined,
       });
       onClose();
@@ -127,11 +127,13 @@ function TransactionModal({
             />
           </div>
 
-          {/* Campos financeiros — só para entrada de combustível */}
-          {isFuel && type === "entrada" && (
+          {/* Valor total obrigatório para TODAS as entradas */}
+          {type === "entrada" && (
             <>
               <div className="field">
-                <label className="field-label">Valor Total da Compra (R$)</label>
+                <label className="field-label">
+                  Valor Total da Compra (R$) <span style={{ color: "var(--color-danger)" }}>*</span>
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -145,7 +147,7 @@ function TransactionModal({
 
               {custoPorUnidade && (
                 <div className="cost-preview">
-                  <span className="cost-label">Custo por {item.unit}:</span>
+                  <span className="cost-label">Preço por {item.unit}:</span>
                   <span className="cost-value">
                     R$ {custoPorUnidade.toFixed(4)}
                   </span>
@@ -168,7 +170,7 @@ function TransactionModal({
 
         <button
           onClick={handleSubmit}
-          disabled={loading || quantidade <= 0}
+          disabled={loading || quantidade <= 0 || entradaInvalida}
           className="modal-submit"
         >
           {loading ? "Salvando..." : "Confirmar"}
@@ -322,10 +324,18 @@ export function InventoryModule() {
 
   async function handleTransaction(payload: TransactionPayload) {
     const { data: { user } } = await supabase.auth.getUser();
+
+    const qty = Math.abs(payload.quantity);
+    const custo_unitario =
+      payload.valor_total_compra && qty > 0
+        ? payload.valor_total_compra / qty
+        : undefined;
+
     const { error } = await supabase.from("inventory_transactions").insert({
       ...payload,
       farm_id: farmId,
       created_by: user?.id,
+      custo_unitario,
     });
     if (!error) await fetchItems();
     else console.error("Transaction error:", error);

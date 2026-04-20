@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Package, Cpu } from "lucide-react";
-import { InventoryModule } from "@/app/components/InventoryModule";
-import { MachinesModule } from "@/app/components/MachinesModule";
+import { InventoryModule } from "@/app/components/module_inventory/InventoryModule";
+import { MachinesModule } from "@/app/components/module_machinery/MachinesModule";
 
 type Tab = "estoque" | "maquinas";
 

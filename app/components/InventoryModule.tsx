@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { createBrowserClient } from "@supabase/ssr";
 import { Search, Plus, X, ChevronDown, TrendingDown, TrendingUp } from "lucide-react";
 
 // =============================================================================
@@ -192,7 +192,7 @@ function NewItemModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const supabase = createClientComponentClient();
+  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<Category>(defaultCategory ?? "adubo");
   const [unit, setUnit] = useState("kg");
@@ -280,7 +280,7 @@ function NewItemModal({
 // InventoryModule — componente principal
 // =============================================================================
 export function InventoryModule() {
-  const supabase = createClientComponentClient();
+  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
   const [farmId, setFarmId] = useState<string | null>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { createBrowserClient } from "@supabase/ssr";
 import { Plus, X, ChevronDown, Gauge, Fuel, Wrench } from "lucide-react";
 
 // =============================================================================
@@ -65,7 +65,7 @@ function OperationModal({
   onClose: () => void;
   onSubmit: () => void;
 }) {
-  const supabase = createClientComponentClient();
+  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
   const [plots, setPlots] = useState<Plot[]>([]);
   const [fuelItems, setFuelItems] = useState<InventoryItem[]>([]);
   const [plotId, setPlotId] = useState("");
@@ -329,7 +329,7 @@ function NewMachineModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const supabase = createClientComponentClient();
+  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
   const [name, setName] = useState("");
   const [type, setType] = useState<MachineType>("trator");
   const [fuelType, setFuelType] = useState<FuelType>("diesel");
@@ -438,7 +438,7 @@ function NewMachineModal({
 // MachinesModule — componente principal
 // =============================================================================
 export function MachinesModule() {
-  const supabase = createClientComponentClient();
+  const supabase = useMemo(() => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!), []);
   const [farmId, setFarmId] = useState<string | null>(null);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [selectedMachine, setSelectedMachine] = useState<Machine | null>(null);
